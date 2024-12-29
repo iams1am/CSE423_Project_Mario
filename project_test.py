@@ -2,14 +2,13 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
-import random
 import math  # Don't forget to import the math module!
 
 # Window dimensions
 W_Width, W_Height = 500, 500
 
 # Player properties
-player_x, player_y = 250, 150
+player_x, player_y = 250, 30  # Player starting on the grass
 player_radius = 10
 player_lives = 3
 player_score = 0
@@ -18,24 +17,40 @@ player_velocity_y = 0  # Initial vertical velocity
 is_paused = False  # Game paused state
 
 # Box properties
-box_width, box_height = 60, 10
-box_speed = 0.05  # Slow down the boxes even more
+box_width, box_height = 80, 10  # Increase box width
 boxes = [
-    {"x": 200, "y": 200, "direction": 1},
-    {"x": 270, "y": 200, "direction": -1},
-    {"x": 340, "y": 200, "direction": 1}
+    {"x": 50, "y": 150, "direction": 0},  # Box 1
+    {"x": 200, "y": 150, "direction": 0},  # Box 2
+    {"x": 350, "y": 150, "direction": 0}   # Box 3
 ]
 
 # Mushroom properties
 mushroom_size = 30  # Increase mushroom size
-mushrooms = []
+mushrooms = [
+    {"x": 50, "y": 10 + mushroom_size // 2},  # Align with grass
+    {"x": 200, "y": 10 + mushroom_size // 2},  # Align with grass
+    {"x": 350, "y": 10 + mushroom_size // 2}   # Align with grass
+]
 
 # Trap properties
 trap_size = 10
-traps = []
+grass = []
 
 # Game state
 game_over = False
+
+class AABB:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+def hasCollided(box1, box2):
+    return (box1.x - box1.width/2) < (box2.x + box2.width/2) and \
+           (box1.x + box1.width/2) > (box2.x - box2.width/2) and \
+           (box1.y - box1.height/2) < (box2.y + box2.height/2) and \
+           (box1.y + box1.height/2) > (box2.y - box2.height/2)
 
 def draw_text(x, y, text):
     glRasterPos2f(x, y)
@@ -70,7 +85,7 @@ def draw_mushroom(x, y):
     glColor3f(1.0, 1.0, 0.0)  # Yellow color
     draw_circle(x, y + mushroom_size // 4, mushroom_size // 6)
 
-def draw_trap(x, y):
+def draw_grass(x, y):
     glColor3f(0.0, 1.0, 0.0)  # Green color
     glBegin(GL_TRIANGLES)
     glVertex2f(x, y)
@@ -104,14 +119,14 @@ def showScreen():
     for mushroom in mushrooms:
         draw_mushroom(mushroom["x"], mushroom["y"])
 
-    # Draw traps
-    for trap in traps:
-        draw_trap(trap["x"], trap["y"])
+    # Draw grass
+    for g in grass:
+        draw_grass(g["x"], g["y"])
 
     # Draw buttons
     glColor3f(1.0, 1.0, 1.0)  # White color
     draw_text(10, W_Height - 20, "End (X)")
-    draw_text(100, W_Height - 20, "Pause (||)")
+    draw_text(100, W_Height - 20, "Pause (P)")
     draw_text(200, W_Height - 20, "Restart (R)")
     draw_text(350, W_Height - 20, f"Lives: {player_lives}  Score: {player_score}")
 
@@ -124,12 +139,12 @@ def showScreen():
 def keyboard_listener(key, x, y):
     global player_x, player_y, player_lives, game_over, player_velocity_y, is_paused
     if key == b'w' and not game_over:
-        player_velocity_y = 1  # Jump up
+        player_velocity_y = 2  # Double the jump height
     elif key == b'a' and not game_over:
         player_x -= 20
     elif key == b'd' and not game_over:
         player_x += 20
-    elif key == b' ':
+    elif key == b'p':
         is_paused = not is_paused  # Toggle pause state
     elif key == b'x':
         exit(0)  # Exit the game
@@ -144,60 +159,57 @@ def keyboard_listener(key, x, y):
 def handle_collisions():
     global player_x, player_y, player_lives, player_score, mushrooms, traps, game_over
 
+    player_aabb = AABB(player_x, player_y, player_radius * 2, player_radius * 2)
+
     # Check for collision with mushrooms
     for mushroom in mushrooms:
-        if (player_x > mushroom["x"] - mushroom_size // 2 and player_x < mushroom["x"] + mushroom_size // 2) and \
-           (player_y > mushroom["y"] - mushroom_size // 2 and player_y < mushroom["y"] + mushroom_size // 2):
+        mushroom_aabb = AABB(mushroom["x"], mushroom["y"], mushroom_size, mushroom_size)
+        if hasCollided(player_aabb, mushroom_aabb):
             player_score += 1
             mushrooms.remove(mushroom)
-            spawn_mushroom()
 
-    # Check for collision with traps
-    for trap in traps:
-        if (player_x > trap["x"] - trap_size // 2 and player_x < trap["x"] + trap_size // 2) and \
-           (player_y > trap["y"] - trap_size // 2 and player_y < trap["y"] + trap_size // 2):
-            player_lives -= 1
-            player_lives = max(player_lives, 0)
-            if player_lives == 0:
-                game_over = True
-            else:
-                respawn_player()
+    if player_y - player_radius < 0:
+        player_y = player_radius
+        player_velocity_y = 0
 
-def spawn_mushroom():
-    global mushrooms
-    while len(mushrooms) < 4:  # Limit to 3-4 mushrooms
-        new_mushroom = {
-            "x": random.randint(0, W_Width),
-            "y": 10 + mushroom_size // 2  # Ground level
-        }
-        mushrooms.append(new_mushroom)
+    if player_y + player_radius > W_Height:
+        player_y = W_Height - player_radius
+        player_velocity_y = 0
 
-def spawn_traps():
-    global traps
+    if player_lives <= 0:
+        player_lives = 0
+        game_over = True
+
+def spawn_grass():
+    global grass
     for x in range(0, W_Width, trap_size):
-        new_trap = {
+        new_grass = {
             "x": x,
-            "y": 10  # Ground level
+            "y": 0  # Align with the bottom of the screen
         }
-        traps.append(new_trap)
+        grass.append(new_grass)
 
 def respawn_player():
     global player_x, player_y
-    player_x, player_y = W_Width // 2, 200
+    player_x, player_y = W_Width // 2, 30  # Player on the grass
 
 def reset_game():
-    global player_x, player_y, player_lives, player_score, game_over, mushrooms, traps
-    player_x, player_y = 250, 150
+    global player_x, player_y, player_lives, player_score, game_over, mushrooms, traps, grass
+    player_x, player_y = 250, 30  # Player on the grass
     player_lives = 3
     player_score = 0
     game_over = False
-    mushrooms = []
+    mushrooms = [
+        {"x": 50, "y": 10 + mushroom_size // 2},  # Align with grass
+        {"x": 200, "y": 10 + mushroom_size // 2},  # Align with grass
+        {"x": 350, "y": 10 + mushroom_size // 2}   # Align with grass
+    ]
     traps = []
-    spawn_mushroom()
-    spawn_traps()
+    grass = []
+    spawn_grass()
 
 def animate():
-    global boxes, player_y, player_velocity_y, is_paused, player_x
+    global player_y, player_velocity_y, is_paused, player_x
 
     if not is_paused and not game_over:
         # Update player position with gravity
@@ -207,6 +219,11 @@ def animate():
         # Ensure player doesn't fall below the ground
         if player_y - player_radius < 0:
             player_y = player_radius
+            player_velocity_y = 0
+
+        # Ensure player doesn't jump out of the screen
+        if player_y + player_radius > W_Height:
+            player_y = W_Height - player_radius
             player_velocity_y = 0
 
         # Ensure player moves along with the box if on a box
@@ -223,12 +240,6 @@ def animate():
         # If not on any box, apply gravity
         if not on_box:
             player_velocity_y += gravity
-
-        # Update boxes positions
-        for box in boxes:
-            box["y"] += box["direction"] * box_speed
-            if box["y"] > 300 or box["y"] < 100:
-                box["direction"] *= -1
 
     glutPostRedisplay()
 
@@ -249,8 +260,7 @@ glutDisplayFunc(showScreen)
 glutIdleFunc(animate)
 glutKeyboardFunc(keyboard_listener)
 
-# Initial mushroom and trap spawn
-spawn_mushroom()
-spawn_traps()
+# Initial grass spawn
+spawn_grass()
 
 glutMainLoop()
