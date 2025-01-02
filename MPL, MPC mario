@@ -18,7 +18,7 @@ gravity = -8  # Faster gravity effect
 jump_strength = 10  # Reduced jump against gravity
 player_velocity_y = 0  # Initial vertical velocity
 is_paused = False  # Game paused state
-player_speed = 50  # Increase player movement speed
+player_speed = 20  # Increase player movement speed
 
 # Box properties
 box_width, box_height = 80, 10
