@@ -35,11 +35,11 @@ mushrooms = []
 # Trap properties
 trap_size = 10
 traps = []
-trap_speed = 10.0  # Increase trap speed
+trap_speed = 50.0  # Increase trap speed
 
 # Grass properties
 grass = []
-grass_speed = 5  # Increase grass movement speed
+grass_speed = 10  # Increase grass movement speed
 
 # Game state
 game_over = False
