@@ -3,7 +3,8 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 import random
-import math  # Don't forget to import the math module!
+import math
+import time
 
 # Window dimensions
 W_Width, W_Height = 500, 500
@@ -13,14 +14,14 @@ player_x, player_y = 250, 30  # Player starting on the grass
 player_radius = 10
 player_lives = 3
 player_score = 0
-gravity = -3  # Faster gravity effect
-jump_strength = 28  # Stronger jump against gravity
+gravity = -8  # Faster gravity effect
+jump_strength = 10  # Stronger jump against gravity
 player_velocity_y = 0  # Initial vertical velocity
 is_paused = False  # Game paused state
-player_speed = 50  # Adjust player movement speed
+player_speed = 50  # Increase player movement speed
 
 # Box properties
-box_width, box_height = 80, 10  # Increase box width
+box_width, box_height = 80, 10
 boxes = [
     {"x": 50, "y": 150, "direction": 0},  # Box 1
     {"x": 200, "y": 150, "direction": 0},  # Box 2
@@ -34,14 +35,15 @@ mushrooms = []
 # Trap properties
 trap_size = 10
 traps = []
-trap_speed = 2.0  # Double trap speed
+trap_speed = 30.0  # Increase trap speed
 
 # Grass properties
 grass = []
-grass_speed = 0.3  # Speed up grass movement
+grass_speed = 10  # Increase grass movement speed
 
 # Game state
 game_over = False
+last_frame_time = time.time()
 
 class AABB:
     def __init__(self, x, y, width, height):
@@ -51,10 +53,10 @@ class AABB:
         self.height = height
 
 def hasCollided(box1, box2):
-    return (box1.x - box1.width / 2) < (box2.x + box2.width / 2) and \
-           (box1.x + box1.width / 2) > (box2.x - box2.width / 2) and \
-           (box1.y - box1.height / 2) < (box2.y + box2.height / 2) and \
-           (box1.y + box1.height / 2) > (box2.y - box2.height / 2)
+    return (box1.x < box2.x + box2.width and
+            box1.x + box1.width > box2.x and
+            box1.y < box2.y + box2.height and
+            box1.y + box1.height > box2.y)
 
 def draw_text(x, y, text):
     glRasterPos2f(x, y)
@@ -154,7 +156,7 @@ def showScreen():
     glutSwapBuffers()
 
 def keyboard_listener(key, x, y):
-    global player_x, player_y, player_lives, game_over, player_velocity_y, is_paused
+    global player_x, player_y, player_lives, game_over, player_velocity_y, is_paused, player_speed
     if key == b'w' and not game_over:
         player_velocity_y = jump_strength  # Jump against gravity
     elif key == b'a' and not game_over:
@@ -176,18 +178,18 @@ def keyboard_listener(key, x, y):
 def handle_collisions():
     global player_x, player_y, player_lives, player_score, mushrooms, traps, game_over
 
-    player_aabb = AABB(player_x, player_y, player_radius * 2, player_radius * 2)
+    player_aabb = AABB(player_x - player_radius, player_y - player_radius, player_radius * 2, player_radius * 2)
 
     # Check for collision with mushrooms
     for mushroom in mushrooms:
-        mushroom_aabb = AABB(mushroom["x"], mushroom["y"], mushroom_size, mushroom_size)
+        mushroom_aabb = AABB(mushroom["x"] - mushroom_size / 2, mushroom["y"] - mushroom_size / 2, mushroom_size, mushroom_size)
         if hasCollided(player_aabb, mushroom_aabb):
             player_score += 1
             mushrooms.remove(mushroom)
 
     # Check for collision with traps
     for trap in traps:
-        trap_aabb = AABB(trap["x"], trap["y"], trap_size, trap_size)
+        trap_aabb = AABB(trap["x"] - trap_size / 2, trap["y"] - trap_size / 2, trap_size, trap_size)
         if hasCollided(player_aabb, trap_aabb):
             player_lives -= 1
             traps.remove(trap)
@@ -239,14 +241,18 @@ def reset_game():
     spawn_grass()
 
 def animate():
-    global player_y, player_velocity_y, is_paused, player_x
+    global player_y, player_velocity_y, is_paused, player_x, last_frame_time
+
+    current_time = time.time()
+    delta_time = current_time - last_frame_time
+    last_frame_time = current_time
 
     if not is_paused and not game_over:
         # Update player position with gravity
-        player_velocity_y += gravity
+        player_velocity_y += gravity * delta_time
         player_y += player_velocity_y
 
-        player_aabb = AABB(player_x, player_y, player_radius * 2, player_radius * 2)
+        player_aabb = AABB(player_x - player_radius, player_y - player_radius, player_radius * 2, player_radius * 2)
 
         # Ensure player doesn't fall below the ground
         if player_y - player_radius < 0:
@@ -261,7 +267,7 @@ def animate():
         # Ensure player moves along with the box if on a box
         on_box = False
         for box in boxes:
-            box_aabb = AABB(box["x"] + box_width / 2, box["y"] + box_height / 2, box_width, box_height)
+            box_aabb = AABB(box["x"], box["y"], box_width, box_height)
             if hasCollided(player_aabb, box_aabb):
                 player_y = box["y"] + box_height + player_radius
                 player_velocity_y = 0
@@ -270,15 +276,15 @@ def animate():
 
         # If not on any box, apply gravity
         if not on_box:
-            player_velocity_y += gravity
+            player_velocity_y += gravity * delta_time
 
         # Move grass, mushrooms, and traps from right to left
         for g in grass:
-            g["x"] -= grass_speed
+            g["x"] -= grass_speed * delta_time
         for mushroom in mushrooms:
-            mushroom["x"] -= trap_speed  # High speed for mushrooms
+            mushroom["x"] -= trap_speed * delta_time  # High speed for mushrooms
         for trap in traps:
-            trap["x"] -= trap_speed  # High speed for traps
+            trap["x"] -= trap_speed * delta_time  # High speed for traps
 
         # Remove off-screen elements and spawn new ones
         grass[:] = [g for g in grass if g["x"] > -10]
@@ -292,6 +298,8 @@ def animate():
         # Randomly spawn new mushrooms and traps one at a time
         if len(mushrooms) == 0 and len(traps) == 0 and random.random() < 0.02:
             spawn_mushroom_or_trap()
+
+    handle_collisions()  # Make sure to call collision detection here
 
     glutPostRedisplay()
 
