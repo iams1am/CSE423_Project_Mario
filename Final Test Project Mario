@@ -164,7 +164,7 @@ def dayNight(value=0):
     
     is_day = not is_day
     glutPostRedisplay()
-    glutTimerFunc(6000, dayNight, 0)
+    glutTimerFunc(10000, dayNight, 0)
 
 def specialCircle(value):
     global radius, radius_change, max_radius, original_radius, circleinfo, speed, disappear_start_time, disappear_start_time2, pause
@@ -485,7 +485,7 @@ glLoadIdentity()
 glutDisplayFunc(display)
 glutIdleFunc(display)  # Continuously call the display function
 glutTimerFunc(1000, update_grass, 0)
-glutTimerFunc(6000, dayNight, 0)
+glutTimerFunc(10000, dayNight, 0)
 glutKeyboardFunc(keyboardlistener)
 glutMouseFunc(mouseListener)
 # Start the main loop
