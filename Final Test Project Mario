@@ -24,7 +24,7 @@ mushrooms = [10, random.choice([1, 500]), 30, 25, 10]
 mushroom_speed = 5
 playerball = [250, 120]  # x, y
 gravity = 2  # Gravity strength
-ground_level = 20  # Minimum y-coordinate for the player
+ground_level = 20  
 pause = False
 life = 3
 score = 0
@@ -297,11 +297,10 @@ def applyGravity(value):
             life += 1
             print(f"Life gained! Current lives: {life}")
             # Make the dynamic ball disappear
-            circleinfo = [random.randint(0, 500), -500]  # Move the ball off-screen
+            circleinfo = [random.randint(0, 500), -500]  
             radius = 0
             disappear_start_time = -1  # Reset the disappear timer
 
-    # Gravity and position update
     if (
         (playerball[0] > 45 and playerball[0] < 155 and playerball[1] == 220) or
         (playerball[0] > 195 and playerball[0] < 305 and playerball[1] == 320) or
@@ -331,14 +330,12 @@ def point_scored():
 
     mushroom_radius = mushrooms[0]
     mushroom_x = mushrooms[1]
-    mushroom_top = mushrooms[2] + mushrooms[0]  # Top of the mushroom (y-coordinate of the top edge)
-    mushroom_bottom = mushrooms[2] - mushrooms[0]  # Bottom of the mushroom
+    mushroom_top = mushrooms[2] + mushrooms[0] 
+    mushroom_bottom = mushrooms[2] - mushrooms[0] 
 
-    # Check if the player touches the top of the mushroom to gain a point
     touching_top = (mushroom_x - mushroom_radius <= player_x <= mushroom_x + mushroom_radius) and \
                    (mushroom_top - player_radius <= player_y <= mushroom_top + player_radius)
 
-    # Check if the player touches the sides of the mushroom to lose a life
     touching_sides = (
         (player_x + player_radius > mushroom_x - mushroom_radius and player_x < mushroom_x - mushroom_radius) or 
         (player_x - player_radius < mushroom_x + mushroom_radius and player_x > mushroom_x + mushroom_radius)
@@ -348,7 +345,7 @@ def point_scored():
         if touching_top:
             score += 1
             print(f"Point scored! Current score: {score}")
-            mushrooms = [10, random.choice([1, 500]), 30, 25, 10]  # Reset mushroom position
+            mushrooms = [10, random.choice([1, 500]), 30, 25, 10]  
             in_air = True
         elif touching_sides:
             life -= 1
@@ -441,20 +438,15 @@ def display():
     drawBox(box_details2[0], box_details2[1], box_details2[2], box_details2[3])
     drawBox(box_details3[0], box_details3[1], box_details3[2], box_details3[3])
 
-    # Mushroom
     makeMushroom()
 
-    # Draw Player
     drawplayer()
 
-    # Circle
     circleDrawing(radius, circleinfo[0], circleinfo[1])
 
-    # Draw grass
     glColor3f(0, 0.30, 0)
     drawgrass(0, 500)
 
-    # Draw score and lives
     glColor3f(1.0, 1.0, 1.0)
     draw_text(120, 470, f"Score: {score}")
     draw_text(350, 470, f"Lives: {life}")
@@ -463,30 +455,28 @@ def display():
         glColor3f(1.0, 0.0, 0.0)
         draw_text(width // 2 - 50, height // 2, f"GAME OVER\nScore: {score}")
 
-    glFlush()  # Ensure everything is rendered
+    glFlush()  
 
 def init():
     glClearColor(0.0, 0.0, 0.0, 1.0)
-    gluOrtho2D(0, width, 0, height)  # Set the coordinate system
+    gluOrtho2D(0, width, 0, height) 
     glutTimerFunc(100, specialCircle, 0)
-    glutTimerFunc(100, updateMushroom, 0)  # Start the mushroom movement
+    glutTimerFunc(100, updateMushroom, 0)  
     glutTimerFunc(50, applyGravity, 0)
 
-glutInit()  # Initialize GLUT
-glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)  # Set display mode
-glutInitWindowSize(width, height)  # Set window size
-glutInitWindowPosition(100, 100)  # Set window position
-wind = glutCreateWindow(b"OpenGL Window")  # Create the window
+glutInit() 
+glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)  
+glutInitWindowSize(width, height)  
+glutInitWindowPosition(100, 100) 
+wind = glutCreateWindow(b"OpenGL Window")  
 init()
-glPointSize(2.0)  # Set the point size
+glPointSize(2.0)  
 glMatrixMode(GL_PROJECTION)
 glLoadIdentity()
-# Register the display function
 glutDisplayFunc(display)
-glutIdleFunc(display)  # Continuously call the display function
+glutIdleFunc(display)  
 glutTimerFunc(1000, update_grass, 0)
 glutTimerFunc(10000, dayNight, 0)
 glutKeyboardFunc(keyboardlistener)
 glutMouseFunc(mouseListener)
-# Start the main loop
 glutMainLoop()
