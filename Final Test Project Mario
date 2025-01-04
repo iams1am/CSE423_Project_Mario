@@ -21,9 +21,9 @@ speed = 5
 disappear_start_time = -1
 disappear_start_time2 = -1
 mushrooms = [10, random.choice([1, 500]), 30, 25, 10]
-mushroom_speed = 5
+mushroom_speed = 8
 playerball = [250, 120]  # x, y
-gravity = 2  # Gravity strength
+gravity = 10  # Gravity strength
 ground_level = 20  
 pause = False
 life = 3
@@ -226,10 +226,10 @@ def makeMushroom():
 def motionMushroom():
     global mushrooms, mushroom_speed
 
-    mushrooms[1] += mushroom_speed
+    mushrooms[1] += mushroom_speed  
 
     if mushrooms[1] < -50 or mushrooms[1] > width + 50:
-        mushrooms[1] = random.choice([1, 500])
+        mushrooms[1] = random.choice([1, 500]) 
         mushroom_speed = abs(mushroom_speed) if mushrooms[1] == 1 else -abs(mushroom_speed)
 
 def updateMushroom(value):
@@ -284,7 +284,6 @@ def applyGravity(value):
 
     point_scored()
 
-    # Check if the player touches the dynamic ball to gain a life
     dynamic_ball_radius = radius
     dynamic_ball_x = circleinfo[0]
     dynamic_ball_y = circleinfo[1]
@@ -296,10 +295,9 @@ def applyGravity(value):
         if life < 3:
             life += 1
             print(f"Life gained! Current lives: {life}")
-            # Make the dynamic ball disappear
             circleinfo = [random.randint(0, 500), -500]  
             radius = 0
-            disappear_start_time = -1  # Reset the disappear timer
+            disappear_start_time = -1  
 
     if (
         (playerball[0] > 45 and playerball[0] < 155 and playerball[1] == 220) or
@@ -359,9 +357,10 @@ def point_scored():
         in_air = False
 
 def draw_res():
-    glColor3f(0.0, 0.5, 0.8)
-    midpoint_line(30, 490, 5, 470)
-    midpoint_line(5, 470, 60, 470)
+    glColor3f(0.0,0.5,0.8)
+    midpoint_line(30,490,5,470)
+    midpoint_line(5,470,30,450)
+    midpoint_line(5,470,60,470)
 
 def draw_cross():
     glColor3f(1.0, 0.0, 0.0)
@@ -415,7 +414,10 @@ def mouseListener(button, state, x, y):
                     glutTimerFunc(100, updateMushroom, 0)
                     glutTimerFunc(50, applyGravity, 0)
             elif nx > 5 and nx < 60 and ny > 450 and ny < 490:
-                start_over()
+                    glutTimerFunc(100, specialCircle, 0)
+                    glutTimerFunc(100, updateMushroom, 0)
+                    glutTimerFunc(50, applyGravity, 0)
+                    start_over()
             elif nx > 460 and nx < 490 and ny > 450 and ny < 490:
                 print("Goodbye")
                 glutDestroyWindow(wind)
@@ -428,11 +430,10 @@ def draw_text(x, y, text):
 def display():
     global score, life, game_over
 
-    glClear(GL_COLOR_BUFFER_BIT)  # Clear the screen
+    glClear(GL_COLOR_BUFFER_BIT)  
     draw_res()
     draw_cross()
     draw_pause()
-    # Draw the boxes using box_details
     glColor3f(0.47, 0.09, 0.09)
     drawBox(box_details[0], box_details[1], box_details[2], box_details[3])
     drawBox(box_details2[0], box_details2[1], box_details2[2], box_details2[3])
